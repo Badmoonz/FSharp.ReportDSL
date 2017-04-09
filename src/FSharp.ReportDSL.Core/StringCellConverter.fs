@@ -61,7 +61,7 @@ type StringCell =
         | EmptyCell -> String.Empty
         
 type StringCellConverter() =
-    interface IStackViewAggregator<StringCell> with 
+    interface IStackViewAggregator<Nothing,StringCell> with 
         member __.Convert(x) = 
             let pos , size, content = x
             let contentStr = 
@@ -75,10 +75,18 @@ type StringCellConverter() =
         member __.HCombine (l,r) = StringCell.hjoin l r
 
 
-type StringCellConverter2() =
-    interface IStackViewAggregator<StringCell> with 
+type StringCellConverterAbsoluteCellPosition() =
+    interface IStackViewAggregator<AbsoluteCellPosition,StringCell> with 
         member __.Convert(x) = 
             let pos , size, content = x
             StringCell.create' (sprintf "(%d,%d)" pos.X pos.Y) size
+        member __.VCombine (l,r) = StringCell.vjoin l r
+        member __.HCombine (l,r) = StringCell.hjoin l r
+
+type StringCellConverterTablePosition() =
+    interface IStackViewAggregator<TablePosition,StringCell> with 
+        member __.Convert(x) = 
+            let pos , size, content = x
+            StringCell.create' (sprintf "(%d;%d) (%d;%d)" pos.Row pos.Column size.Height size.Width) size
         member __.VCombine (l,r) = StringCell.vjoin l r
         member __.HCombine (l,r) = StringCell.hjoin l r

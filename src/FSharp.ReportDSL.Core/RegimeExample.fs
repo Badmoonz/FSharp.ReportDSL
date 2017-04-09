@@ -66,15 +66,8 @@ module RegimExample =
         RangeProxy.Stack(Vertical, fun main -> 
         [|
             RangeProxy.constCell (CellContent.FromString "AZZ")
-            RangeProxy.zero
-            RangeProxy.empty
-            RangeProxy.zero
-            RangeProxy.empty
-            RangeProxy.zero
-
-            RangeProxy.empty
             regimeInfoProxy
-            regimeInfoProxy
+//            regimeInfoProxy
 
         |])
 

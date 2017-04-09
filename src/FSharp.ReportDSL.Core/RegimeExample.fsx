@@ -2,6 +2,7 @@
 #load "RangeProxy.fs"
 #load "VTable.fs"
 #load "RangeProxyConverter.fs"
+#load "MetaDataProviders.fs"
 #load "StringCellConverter.fs"
 #load "HtmlConverter.fs"
 #load "RegimeExample.fs"
@@ -18,26 +19,37 @@ open FSharp.ReportDSL.Examples.RegimExampleVtable
 //|> StringCell.toText
 //|> printfn "%s"
 
-RangeProxyConveter.convert {X = 0 ; Y = 0} manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+
+let abs = AbsoluteCellPositionMetaDataProvider()
+let table = TablePositionMetaDataProvider()
+
+
+
+
+RangeProxyConveter.convert table  manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
 |> HtmlConverter.createTable
 |> HtmlConverter.toFile @"C:\Users\Badmoonz\Source\Repos\FSharp.ReportDSL\src\FSharp.ReportDSL.Core\test.html"
 
-let stringCellConverter = StringCellConverter()
 
-let stringCellConverter2 = StringCellConverter2()
 
-RangeProxyConveter.convert {X =0 ; Y = 0} manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
-|> StackView.aggregate stringCellConverter
+
+RangeProxyConveter.convert abs manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+|> StackView.aggregate (StringCellConverterAbsoluteCellPosition())
 |> StringCell.toText
 |> printfn "%s"
 
 
-RangeProxyConveter.convert {X =0 ; Y = 0} manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
-|> StackView.aggregate stringCellConverter2
+printfn ""
+printfn ""
+
+RangeProxyConveter.convert table manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+|> StackView.aggregate (StringCellConverterTablePosition())
 |> StringCell.toText
 |> printfn "%s"
 
-RangeProxyConveter.convert {X =0; Y = 0}  regimeReportProxy regimeInfo
-|> StackView.aggregate stringCellConverter
-|> StringCell.toText
-|> printfn "%s"
+
+//
+//RangeProxyConveter.convert {X =0; Y = 0}  regimeReportProxy regimeInfo
+//|> StackView.aggregate stringCellConverter
+//|> StringCell.toText
+//|> printfn "%s"

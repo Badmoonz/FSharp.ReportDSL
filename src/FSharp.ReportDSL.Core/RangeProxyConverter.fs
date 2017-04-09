@@ -7,24 +7,23 @@ open FSharp.ReportDSL.Helpers
 open FSharp.ReportDSL.Core 
 
 
-type CellPositionType = | Absolute | Relative
-
-type CellPosition = {X : int; Y : int}
-
-type StackView =
-    | CellView of CellPosition : CellPosition * CellSize : ContentSize * CellContent : CellContent 
-    | StackView of StackType * StackView []
 
 
-type IStackViewAggregator<'t> = 
+type StackView<'m> =
+    | CellView of MetaData : 'm * CellSize : ContentSize * CellContent : CellContent 
+    | StackView of StackType * StackView<'m> []
+
+
+type IStackViewAggregator<'m, 't> = 
     interface
-        abstract Convert : (CellPosition * ContentSize * CellContent) -> 't
+        abstract Convert : ('m * ContentSize * CellContent) -> 't
         abstract VCombine : 't * 't -> 't
         abstract HCombine : 't * 't -> 't
     end
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]       
 module StackView = 
-    let rec aggregate (converter :  IStackViewAggregator<'t>) (view : StackView) = 
+
+    let rec aggregate (converter :  IStackViewAggregator<'m, 't>) (view : StackView<'m>) = 
         match view with
         | CellView (pos,size,content) -> converter.Convert(pos,size,content)
         | StackView (Horizontal, views) -> fold1 (fun l r -> converter.HCombine(l,r)) (Seq.map (aggregate converter) views)
@@ -34,26 +33,35 @@ module StackView =
         | StackView (Horizontal, views) -> Seq.map contentSize views |> ContentSize.combineH
         | StackView (Vertical, views)   -> Seq.map contentSize views |> ContentSize.combineV   
 
+
+type IMetaDataProvider<'m> = 
+    interface 
+        abstract UpdateMetaData :'m * StackType * ContentSize -> 'm
+        abstract Default :'m 
+    end
+
+
 module RangeProxyConveter =
     open Helpers
 
-    let private updatePosition stackType (position : CellPosition, contentsize : ContentSize) =
-        match stackType with
-        | Horizontal -> {position with X = position.X + contentsize.Width}
-        | Vertical -> {position with Y = position.Y + contentsize.Height}
+    let private convertCell (metadataProvider : IMetaDataProvider<'m>) (metaData : 'm) (actualSize : ContentSize) ({Width = allowedWidth; Height = allowedHeight} : ContentSize) (content : CellContent)  = 
+        let ({Width = actualWidth; Height = actualHeight} : ContentSize) = actualSize
 
-    let private convertCell (position : CellPosition) ({Width = actualWidth; Height = actualHeight} : ContentSize) ({Width = allowedWidth; Height = allowedHeight} : ContentSize) (content : CellContent)  = 
-        StackView(Horizontal, 
+        let urMetadata = metadataProvider.UpdateMetaData(metaData, Horizontal,  actualSize)
+        let llMetadata = metadataProvider.UpdateMetaData(metaData, Vertical,  actualSize)
+        let lrMetadata = metadataProvider.UpdateMetaData(llMetadata, Horizontal,  actualSize)
+        
+        StackView(Vertical, 
             [|
-            StackView (Vertical, 
+            StackView (Horizontal, 
                 [| 
-                    CellView (position, {Width = actualWidth; Height = actualHeight},content)
-                    CellView ({ position with X = position.X + actualWidth}, {Width = allowedWidth - actualWidth; Height = actualHeight},CellContent.Empty)
+                    CellView (metaData, {Width = actualWidth; Height = actualHeight},content)
+                    CellView (urMetadata, {Width = allowedWidth - actualWidth; Height = actualHeight},CellContent.Empty)
                 |] )
-            StackView (Vertical,
+            StackView (Horizontal,
                 [|
-                    CellView ({position with Y = position.Y + actualHeight}, {Width = actualWidth; Height = allowedHeight - actualHeight},CellContent.Empty )
-                    CellView ({X = position.X + actualWidth; Y = position.Y + actualHeight}, {Width = allowedWidth - actualWidth; Height =  allowedHeight - actualHeight}, CellContent.Empty)
+                    CellView (llMetadata, {Width = actualWidth; Height = allowedHeight - actualHeight},CellContent.Empty )
+                    CellView (lrMetadata, {Width = allowedWidth - actualWidth; Height =  allowedHeight - actualHeight}, CellContent.Empty)
                 |])
             |])
 
@@ -69,10 +77,10 @@ module RangeProxyConveter =
 
     
 
-    let convert (proxy  : RangeProxy<'t>) (value : 't) : StackView = 
+    let convert (metadataProvider : IMetaDataProvider<'m>) (proxy  : RangeProxy<'t>) (value : 't) : StackView<'m> = 
         let totalSize = RangeProxy.minimalContentSize proxy value
      
-        let rec convert' (value : 't) (position : CellPosition) (allowedSize : ContentSize) (proxy  : RangeProxy<'t>) : StackView  =
+        let rec convert' (value : 't) (metaData : 'm) (allowedSize : ContentSize) (proxy  : RangeProxy<'t>) : StackView<'m>  =
             let minimalSize = RangeProxy.minimalContentSize proxy value
             let dynamicWidth, dynamicHeight = RangeProxy.hasDynamicParts proxy value
             match proxy with
@@ -82,7 +90,7 @@ module RangeProxyConveter =
                     Width = if dynamicWidth then allowedSize.Width else minimalSize.Width
                     Height = if dynamicHeight then allowedSize.Height else minimalSize.Height
                 }
-                convertCell position actualSize allowedSize (contentMapper value)
+                convertCell metadataProvider metaData actualSize allowedSize (contentMapper value)
             | Stack (stackType, items) -> 
                 let subRanges =  items value
                 let subRangesDynamic = subRanges |> Array.map (fun x -> RangeProxy.minimalContentSize x value, RangeProxy.hasDynamicParts x value)
@@ -113,13 +121,13 @@ module RangeProxyConveter =
                     |> Seq.toArray
 
 //                printfn "actualContentSizes  %A" (String.Join("|", Seq.map (fun x -> sprintf "{ Width = %d; Height = %d }" x.Width x.Height) contentSizes )) 
-                let updatePosition = updatePosition stackType
+                let updateMetaData = fun (m,size) -> metadataProvider.UpdateMetaData(m,stackType,size)
                 let views =
-                    Seq.mapFold(fun pos (size, range) -> convert' value pos  size range, updatePosition(pos,size)) position (Seq.zip contentSizes subRanges)
+                    Seq.mapFold(fun pos (size, range) -> convert' value pos  size range, updateMetaData(pos,size)) metaData (Seq.zip contentSizes subRanges)
                     |> fst
                     |> Seq.toArray
 
                 StackView (stackType, views)
-        convert' value {X = 0; Y = 0} totalSize proxy
+        convert' value metadataProvider.Default totalSize proxy
     //
 //    

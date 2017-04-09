@@ -53,6 +53,7 @@
     <Compile Include="RangeProxy.fs" />
     <Compile Include="VTable.fs" />
     <Compile Include="RangeProxyConverter.fs" />
+    <Compile Include="MetaDataProviders.fs" />
     <Compile Include="StringCellConverter.fs" />
     <Compile Include="HtmlConverter.fs" />
     <Compile Include="StringCellTest.fs" />

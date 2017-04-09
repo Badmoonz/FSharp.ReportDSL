@@ -54,7 +54,13 @@ module RegimExampleVtable =
     let oilInfoView  : VTableView<RegimeInfo> = oilInfoVTable  |> VTableInfo.fromSingle |> VTableView.contramap (fun info -> info.OilInfo)
 
     let singleRegimeInfoGrid = VTableView.combine [| regimeNameTableView; oilInfoView; flowInfoView ; npsInfoView  |] |> VTableView.fromSingle
-    let manyRegimesInfoGrid = VTableView.combine [| regimeNameTableView;  oilInfoView; flowInfoView  ; npsInfoView |] |> VTableView.fromSeq
+    let manyRegimesInfoGrid = 
+        RangeProxy.stack Vertical [|
+            RangeProxy.constCell (CellContent.FromString "AZZ")
+            RangeProxy.empty
+            VTableView.combine [| regimeNameTableView;  oilInfoView; flowInfoView  ; npsInfoView |] |> VTableView.fromSeq
+
+        |]
 
 
 
