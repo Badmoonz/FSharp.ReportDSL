@@ -18,17 +18,8 @@ type AbsoluteCellPositionMetaDataProvider() =
             | Vertical -> {position with Y = position.Y + contentsize.Height}
         member __.Default = {X = 0; Y = 0}
 
-type RelativeCellPosition = {Column : int; Row: int}
-
-type RelativeCellPositionMetaDataProvider() = 
-    interface  IMetaDataProvider<RelativeCellPosition> with
-        member __.UpdateMetaData(position, stackType, contentsize) : RelativeCellPosition = 
-            match stackType with
-            | Horizontal -> {position with Column = position.Column + 1}
-            | Vertical -> {position with Row = position.Row + 1}
-        member __.Default = {Row = 0; Column = 0}
-
 type TablePosition = {Column : int; Row: int;}
+
 type TablePositionMetaDataProvider() = 
     interface  IMetaDataProvider<TablePosition> with
         member __.UpdateMetaData(position, stackType, contentsize) : TablePosition = 
