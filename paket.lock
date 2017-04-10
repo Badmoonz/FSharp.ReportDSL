@@ -1,4 +1,4 @@
-FRAMEWORK: NET45
+FRAMEWORK: >= NET45
 NUGET
   remote: http://www.nuget.org/api/v2
     FSharp.Core (4.1.2) - redirects: force
@@ -8,6 +8,10 @@ NUGET
 GROUP Build
 NUGET
   remote: http://www.nuget.org/api/v2
+    ClosedXML (0.87.1)
+      DocumentFormat.OpenXml (>= 1.0) - framework: net35
+      DocumentFormat.OpenXml (>= 2.5) - framework: >= net40
+    DocumentFormat.OpenXml (2.5) - framework: >= net35
     FAKE (4.57.4)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Formatting (2.14.4)

@@ -56,7 +56,8 @@ module RegimExampleVtable =
     let singleRegimeInfoGrid = VTableView.combine [| regimeNameTableView; oilInfoView; flowInfoView ; npsInfoView  |] |> VTableView.fromSingle
     let manyRegimesInfoGrid = 
         RangeProxy.stack Vertical [|
-            RangeProxy.constCell (CellContent.FromString "AZZ")
+            RangeProxy.constCell (CellContent.FromString "AZZZXZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+            RangeProxy.empty
             RangeProxy.empty
             VTableView.combine [| regimeNameTableView;  oilInfoView; flowInfoView  ; npsInfoView |] |> VTableView.fromSeq
 
