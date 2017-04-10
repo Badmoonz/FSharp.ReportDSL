@@ -6,7 +6,7 @@ open FSharp.ReportDSL.Core
 
 type VTableRowInfo<'t> =  {
     Content  : RangeProxy<'t>
-    Label    : string 
+    Label    : RangeProxy<unit> 
 }
 
 module VTableRowInfo = 
@@ -16,11 +16,19 @@ module VTableRowInfo =
     }
     let fromMapper label  (mapper : 't -> CellContent) : VTableRowInfo<'t>  = {
         Content = RangeProxy.cell mapper
-        Label = label
+        Label = RangeProxy.constStr label
+    }
+
+    let group label (rows : VTableRowInfo<'t> []) : VTableRowInfo<'t> = {
+        Content = RangeProxy.stack Vertical (rows |> Array.map (fun x -> x.Content) )
+        Label   = RangeProxy.stack Horizontal [| RangeProxy.constStr label; RangeProxy.stack Vertical (rows |> Array.map (fun x -> x.Label));|]
     }
 
     let fromMappers (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> [] =
         mappers |> Seq.map ( fun (label,mapper) -> fromMapper label mapper) |> Seq.toArray
+
+    let groupMappers label (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> =
+        fromMappers mappers |> group label
 
 type VTableInfo<'t> =  {
      ShowLabelsAsColumn  : bool 
@@ -60,7 +68,7 @@ module VTableInfo =
          Header = RangeProxy.contramap f vtable.Header
     }
 
-
+    /// try generalize with fromSeq
     let fromSingle (vtable: VTableInfo<'t>) : VTableView<'t> = 
        let rowsContent = 
             vtable.RowInfos
@@ -69,13 +77,13 @@ module VTableInfo =
 
        let rowLablesContent : RangeProxy<'t> = 
             vtable.RowInfos 
-            |> Array.map(fun x -> RangeProxy.constCell (CellContent.FromString x.Label))
+            |> Array.map(fun x -> RangeProxy.contramap (const' ()) x.Label)
             |> RangeProxy.stack Vertical
 
        if vtable.ShowLabelsAsColumn
        then 
             {   
-                Header = RangeProxy.stack Horizontal [RangeProxy.constCell (CellContent.FromString "Наименование параметра") ; vtable.Header]
+                Header = RangeProxy.stack Horizontal [RangeProxy.syncWidth rowLablesContent (CellContent.FromString "Наименование параметра") ; vtable.Header]
                 Data =  RangeProxy.stack Horizontal [rowLablesContent ; rowsContent]
             }
        else 
@@ -87,7 +95,7 @@ module VTableInfo =
     let fromSeq (vtable : VTableInfo<'t>) : VTableView<'t []> =
         let rowLablesContent : RangeProxy<'t> = 
             vtable.RowInfos 
-            |> Array.map(fun x -> RangeProxy.constCell (CellContent.FromString x.Label))
+            |> Array.map(fun x -> RangeProxy.contramap (const' ()) x.Label)
             |> RangeProxy.stack Vertical
 
         let rowsContent = 
@@ -98,7 +106,7 @@ module VTableInfo =
         if vtable.ShowLabelsAsColumn
         then 
             {   
-                Header = (RangeProxy.stack Horizontal [RangeProxy.constCell (CellContent.FromString "Наименование параметра") ; RangeProxy.fromSeq Horizontal vtable.Header])
+                Header = (RangeProxy.stack Horizontal [RangeProxy.syncWidth (RangeProxy.fromFirst rowLablesContent) (CellContent.FromString "Наименование параметра") ; RangeProxy.fromSeq Horizontal vtable.Header])
                 Data =  (RangeProxy.stack Horizontal [ RangeProxy.fromFirst rowLablesContent ; RangeProxy.fromSeq Horizontal rowsContent])
             }
         else 

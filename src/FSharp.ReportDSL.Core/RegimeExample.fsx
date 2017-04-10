@@ -42,9 +42,9 @@ RangeProxyConveter.convert table  manyRegimesInfoGrid [|regimeInfo; regimeInfo2|
 |> HtmlConverter.toFile @"C:\Users\Badmoonz\Source\Repos\FSharp.ReportDSL\src\FSharp.ReportDSL.Core\test.html"
 
 
-
+    
 RangeProxyConveter.convert abs manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
-|> StackView.aggregate (StringCellConverterAbsoluteCellPosition())
+|> StackView.aggregate (StringCellConverter())
 |> StringCell.toText
 |> printfn "%s"
 

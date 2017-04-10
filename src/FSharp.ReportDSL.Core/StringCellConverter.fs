@@ -60,8 +60,8 @@ type StringCell =
              |> String.concat System.Environment.NewLine
         | EmptyCell -> String.Empty
         
-type StringCellConverter() =
-    interface IStackViewAggregator<Nothing,StringCell> with 
+type StringCellConverter<'t>() =
+    interface IStackViewAggregator<'t,StringCell> with 
         member __.Convert(x) = 
             let pos , size, content = x
             let contentStr = 

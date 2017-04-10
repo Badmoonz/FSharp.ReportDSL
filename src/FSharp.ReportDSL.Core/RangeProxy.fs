@@ -112,6 +112,15 @@ module RangeProxy =
 
     let constCell<'t> (content : CellContent) : RangeProxy<'t> = CellProxy.create (const' content) |> Cell
 
+    let constStr<'t> s : RangeProxy<'t> = constCell (CellContent.FromString s)
+
+    /// hack :(
+    let internal syncWidth (from : RangeProxy<'t>) (content : CellContent) =
+         Cell <| { 
+            ContentMapper = const' content
+            CellSize = fun x -> { Width = Static (minimalContentSize from x).Width; Height = Dynamic }
+        }
+
     let stack<'t> stackType (ranges : RangeProxy<'t> seq) = 
         Stack (stackType, const' (ranges |> Seq.toArray))       
     

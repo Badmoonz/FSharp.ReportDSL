@@ -13,24 +13,25 @@ module RegimExampleVtable =
          ShowLabelsAsColumn = false
          RowInfos = VTableRowInfo.fromMappers 
             [|
-                (@"т / день", fun s -> CellContent.FromDouble s.PerDay)
-                (@"тыс т. / мес.", fun s -> CellContent.FromDouble s.PerMonth)
+                ("т / день", fun s -> CellContent.FromDouble s.PerDay)
+                ("тыс т. / мес.", fun s -> CellContent.FromDouble s.PerMonth)
                 (@"млн. т. / год", fun s -> CellContent.FromDouble s.PerYear)
             |]
          Header  =  RangeProxy.cell (fun x -> CellContent.FromString x.Name)
     }
-
     let npsInfoVTable : VTableInfo<NpsInfo> = {
          ShowLabelsAsColumn = true
-         RowInfos = VTableRowInfo.fromMappers 
-            [|
-                (@"Кол-во агрегатов", fun s -> CellContent.FromInt (Some s.ActivePumps.Length))
-                (@"Агрегаты", fun s -> CellContent.FromString (s.ActivePumps |> Seq.map(fun x -> x.Name) |> String.concat ";"))
-                (@"Pвх", fun s -> CellContent.FromDouble s.PIn)
-                (@"Pкол", fun s -> CellContent.FromDouble s.PCol)
-                (@"Pвых", fun s -> CellContent.FromDouble s.POut)
-                (@"Pзащ", fun s -> CellContent.FromDouble s.PDef)
-            |]
+         RowInfos = 
+            Seq.toArray <| seq {
+                yield! VTableRowInfo.fromMappers  [|
+                    (@"Кол-во агрегатов", fun s -> CellContent.FromInt (Some s.ActivePumps.Length))
+                    (@"Агрегаты", fun s -> CellContent.FromString (s.ActivePumps |> Seq.map(fun x -> x.Name) |> String.concat ";")) |]     
+                yield VTableRowInfo.groupMappers "P" [|
+                    (@"Pвх", fun s -> CellContent.FromDouble s.PIn)
+                    (@"Pкол", fun s -> CellContent.FromDouble s.PCol)
+                    (@"Pвых", fun s -> CellContent.FromDouble s.POut)
+                    (@"Pзащ", fun s -> CellContent.FromDouble s.PDef)|]  
+            }
          Header  =  RangeProxy.cell (fun x -> CellContent.FromString x.Name)
     }
 
