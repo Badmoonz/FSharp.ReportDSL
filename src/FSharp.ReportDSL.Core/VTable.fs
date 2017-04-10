@@ -14,7 +14,7 @@ module VTableRowInfo =
         Content = RangeProxy.contramap f rowInfo.Content
         Label  = rowInfo.Label
     }
-    let fromMapper label  (mapper : 't -> CellContent) : VTableRowInfo<'t>  = {
+    let fromMapper (label : string , mapper : 't -> CellContent) : VTableRowInfo<'t>  = {
         Content = RangeProxy.cell mapper
         Label = RangeProxy.constStr label
     }
@@ -25,7 +25,7 @@ module VTableRowInfo =
     }
 
     let fromMappers (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> [] =
-        mappers |> Seq.map ( fun (label,mapper) -> fromMapper label mapper) |> Seq.toArray
+        mappers |> Seq.map ( fun (label,mapper) -> fromMapper(label,mapper)) |> Seq.toArray
 
     let groupMappers label (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> =
         fromMappers mappers |> group label
@@ -43,6 +43,12 @@ type VTableView<'t> = {
 
 
 module VTableView = 
+
+    let liftDependency (f : 'a -> VTableView<'t>) : VTableView<'a * 't> = {
+        Header = RangeProxy.liftDependency (fun a -> (f a).Header)
+        Data = RangeProxy.liftDependency (fun a -> (f a).Data)
+    }
+        
     let contramap f (view :  VTableView<'t>) = {
          Header = RangeProxy.contramap f view.Header
          Data =  RangeProxy.contramap f view.Data

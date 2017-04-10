@@ -11,7 +11,7 @@ module RegimExample =
     type OilInfo = { Ro : double option ; Nu : double option }
     type PumpInfo = { Name : string; }
     type FlowInfo  = { Name : string;  PerDay : double option ; PerYear : double option ; PerMonth : double option}
-    type NpsInfo  = { Name : string;  ActivePumps : PumpInfo []; PIn : double option ; POut : double option ; PCol : double option; PDef   : double option; }
+    type NpsInfo  = { Name : string;  ActivePumps : PumpInfo []; PIn : double option ; POut : double option ; PCol : double option; PDef   : double option; AvgShaftSpeed : double option }
     type RegimeInfo = {RegimeName : string ; OilInfo : OilInfo; NpsInfos : NpsInfo []; FlowInfos : FlowInfo []  } 
 
 
@@ -77,9 +77,9 @@ module RegimExample =
         OilInfo = {Ro = Some 988.; Nu = Some 8.9 }
         NpsInfos  =
             [|
-              { Name = "NPS1" ; PIn = Some 1.1 ; POut = Some 1.2 ; PCol = Some 1.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
-              { Name = "NPS2" ; PIn = Some 2.1 ; POut = Some 2.2 ; PCol = Some 2.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
-              { Name = "NPS3" ; PIn = Some 3.1 ; POut = Some 3.2 ; PCol = Some 3.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
+              { Name = "NPS1" ; PIn = Some 1.1 ; POut = Some 1.2 ; PCol = Some 1.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = Some 3000. }
+              { Name = "NPS2" ; PIn = Some 2.1 ; POut = Some 2.2 ; PCol = Some 2.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = None}
+              { Name = "NPS3" ; PIn = Some 3.1 ; POut = Some 3.2 ; PCol = Some 3.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = Some 3000.}
             |] 
         FlowInfos = 
             [|
@@ -96,9 +96,9 @@ module RegimExample =
         OilInfo = {Ro = Some 100.; Nu = Some 15. }
         NpsInfos  =
             [|
-              { Name = "NPS1" ; PIn = Some 10.1 ; POut = Some 10.2 ; PCol = Some 10.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
-              { Name = "NPS2" ; PIn = Some 20.1 ; POut = Some 20.2 ; PCol = Some 20.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
-              { Name = "NPS3" ; PIn = Some 30.1 ; POut = Some 30.2 ; PCol = Some 30.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]}
+              { Name = "NPS1" ; PIn = Some 10.1 ; POut = Some 10.2 ; PCol = Some 10.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = None}
+              { Name = "NPS2" ; PIn = Some 20.1 ; POut = Some 20.2 ; PCol = Some 20.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = None}
+              { Name = "NPS3" ; PIn = Some 30.1 ; POut = Some 30.2 ; PCol = Some 30.3; PDef = None; ActivePumps = [|{ Name = "NA1"}; {Name = "NA2"}|]; AvgShaftSpeed = None}
             |] 
         FlowInfos = 
             [|

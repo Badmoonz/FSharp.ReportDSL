@@ -59,6 +59,7 @@
     <Compile Include="StringCellTest.fs" />
     <Compile Include="RegimeExample.fs" />
     <Compile Include="RegimeExampleVTable.fs" />
+    <Compile Include="RegimeComplianceExample.fs" />
     <None Include="RegimeExample.fsx" />
     <None Include="Htmltest.fsx" />
     <None Include="test.html" />

@@ -84,6 +84,8 @@ type RangeProxy<'t> =
 module RangeProxy =
     open Helpers
 
+
+
     let rec minimalContentSize = function 
         | Cell cell -> CellProxy.minimalContentSize cell
         | Stack (stacktype, items) -> 
@@ -103,6 +105,9 @@ module RangeProxy =
     let rec contramap (f : 'u -> 't)  = function
         | Cell x -> Cell (CellProxy.contramap f x)
         | Stack (stacktype, items) -> Stack (stacktype, fun u -> Array.map (contramap f) (items (f u)))
+
+    let liftDependency (f : 'a -> RangeProxy<'t>) : RangeProxy<'a * 't> =
+       Stack (Horizontal, fun (a,x) -> [| f a |> contramap snd |]) 
 
     let empty<'t> : RangeProxy<'t> = Cell ({ContentMapper = const' (CellContent.FromString  String.Empty); CellSize = const' ContentProxySize.DefaultDyanmic })
 
