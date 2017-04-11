@@ -13,6 +13,7 @@
 
 #load "RegimeExample.fs"
 #load "RegimeExampleVTable.fs"
+#load "RegimeComplianceExample.fs"
 
 #load "ExcelConverter.fs"
 
@@ -20,13 +21,8 @@
 open FSharp.ReportDSL
 open FSharp.ReportDSL.Converters
 open FSharp.ReportDSL.Examples.RegimExample
-open FSharp.ReportDSL.Examples.RegimExampleVtable
+open FSharp.ReportDSL.Examples
 
-
-//
-//StringCellConveter.convert singleRegimeInfoGrid regimeInfo
-//|> StringCell.toText
-//|> printfn "%s"
 
 
 let abs = AbsoluteCellPositionMetaDataProvider()
@@ -34,16 +30,16 @@ let table = TablePositionMetaDataProvider()
 
 
 
-RangeProxyConveter.convert table  manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+RangeProxyConveter.convert table  RegimExampleVtable.manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
 |> ExcelConverter.createTable (System.IO.Path.Combine(__SOURCE_DIRECTORY__, "HelloWorld.xlsx"))
 
-RangeProxyConveter.convert table  manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+RangeProxyConveter.convert table  RegimExampleVtable.manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
 |> HtmlConverter.createTable
 |> HtmlConverter.toFile @"C:\Users\Badmoonz\Source\Repos\FSharp.ReportDSL\src\FSharp.ReportDSL.Core\test.html"
 
 
     
-RangeProxyConveter.convert abs manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
+RangeProxyConveter.convert abs RegimExampleVtable.singleRegimeInfoGrid regimeInfo
 |> StackView.aggregate (StringCellConverter())
 |> StringCell.toText
 |> printfn "%s"
@@ -52,10 +48,15 @@ RangeProxyConveter.convert abs manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
 printfn ""
 printfn ""
 
-RangeProxyConveter.convert table manyRegimesInfoGrid [|regimeInfo; regimeInfo2|]
-|> StackView.aggregate (StringCellConverterTablePosition())
+
+RangeProxyConveter.convert table RegimeComplianceExample.regimeComplianceTemplate RegimeComplianceExample.regimeCompliance
+|> StackView.aggregate (StringCellConverter())
 |> StringCell.toText
 |> printfn "%s"
+
+
+RangeProxyConveter.convert table RegimeComplianceExample.regimeComplianceTemplate RegimeComplianceExample.regimeCompliance
+|> ExcelConverter.createTable (System.IO.Path.Combine(__SOURCE_DIRECTORY__, "HelloWorld.xlsx"))
 
 
 //
