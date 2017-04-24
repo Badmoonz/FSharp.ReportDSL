@@ -5,6 +5,7 @@ framework >= net45
 nuget FSharp.Core redirects: force
 
 group Build
+  framework >= net45
   source http://nuget.org/api/v2
   
   nuget SourceLink.Fake
@@ -14,7 +15,8 @@ group Build
   github fsharp/FAKE modules/Octokit/Octokit.fsx
 
 group Test
+  framework >= net45
   source http://nuget.org/api/v2
   
-  nuget NUnit ~> 2
-  nuget NUnit.Runners ~> 2
+  nuget NUnit ~> 3
+  nuget NUnit.Runners ~> 3

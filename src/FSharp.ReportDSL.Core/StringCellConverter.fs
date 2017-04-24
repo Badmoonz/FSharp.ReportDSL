@@ -11,7 +11,11 @@ type StringCell =
         match sc1,sc2 with
         | (StringCell ss1) ,(StringCell ss2) ->
             if (ss1.Length <> ss2.Length)
-            then raise (Exception(sprintf "StringCell.hjoin failed %d <> %d" ss1.Length ss2.Length))
+            then
+                let maxLen = Math.Max(ss1.Length, ss2.Length)
+                let ss1' = Array.ofSeq <|  seq{ yield! ss1; yield! Array.create (maxLen - ss1.Length) (new String(' ', ss1.[0].Length))}
+                let ss2' = Array.ofSeq <|  seq{ yield! ss2; yield! Array.create (maxLen - ss2.Length) (new String(' ', ss2.[0].Length))}
+                StringCell.hjoin (StringCell ss1') (StringCell ss2')
             else Array.map2 (fun s1 s2 ->  s1 + "|" + s2 ) ss1 ss2 |> StringCell
         | EmptyCell , _ -> sc2
         | _ , EmptyCell -> sc1

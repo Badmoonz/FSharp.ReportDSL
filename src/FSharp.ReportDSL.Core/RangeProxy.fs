@@ -42,9 +42,7 @@ type ContentSize =
             Width = (cs |> Seq.map ContentSize.width |> Seq.max) 
             Height = (cs |> Seq.map ContentSize.height |> Seq.sum) 
         }
-  
-   
-     
+    
 
 type CellProxy<'t> = { 
     ContentMapper : 't -> CellContent
@@ -84,8 +82,6 @@ type RangeProxy<'t> =
 module RangeProxy =
     open Helpers
 
-
-
     let rec minimalContentSize = function 
         | Cell cell -> CellProxy.minimalContentSize cell
         | Stack (stacktype, items) -> 
@@ -123,8 +119,15 @@ module RangeProxy =
     let internal syncWidth (from : RangeProxy<'t>) (content : CellContent) =
          Cell <| { 
             ContentMapper = const' content
-            CellSize = fun x -> { Width = Dynamic (minimalContentSize from x).Width; Height = Dynamic 1 }
+            CellSize = fun x -> let minSize = minimalContentSize from x in  { Width = Dynamic minSize.Width; Height = Dynamic 1 }
         }
+
+    let internal syncHeight (from : RangeProxy<'t>) (content : CellContent) =
+         Cell <| { 
+            ContentMapper = const' content
+            CellSize = fun x -> let minSize = minimalContentSize from x in  { Width = Dynamic 1; Height = Dynamic minSize.Height }
+        }
+
 
     let stack<'t> stackType (ranges : RangeProxy<'t> seq) = 
         Stack (stackType, const' (ranges |> Seq.toArray))       
