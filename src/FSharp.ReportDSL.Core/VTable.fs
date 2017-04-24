@@ -4,44 +4,50 @@ open FSharp.ReportDSL
 open FSharp.ReportDSL.Helpers
 open FSharp.ReportDSL.Core
 
-type VTableRowInfo<'t> =  {
+type ColumnInfo<'t> =  {
     Content  : RangeProxy<'t>
     Label    : RangeProxy<'t> 
 }
 
-module VTableRowInfo = 
-    let contramap f (rowInfo :  VTableRowInfo<'t>) ={
-        Content = RangeProxy.contramap f rowInfo.Content
-        Label  =  RangeProxy.contramap f rowInfo.Label
-    }
-    let fromMapper (label : string , mapper : 't -> CellContent) : VTableRowInfo<'t>  = {
-        Content = RangeProxy.cell mapper
-        Label = RangeProxy.constStr label
-    }
-
-    let group label (rows : VTableRowInfo<'t> []) : VTableRowInfo<'t> = {
-        Content = RangeProxy.stack Vertical (rows |> Array.map (fun x -> x.Content) )
-        Label   = RangeProxy.stack Horizontal [| RangeProxy.constStr label; RangeProxy.stack Vertical (rows |> Array.map (fun x -> x.Label));|]
-    }
-
-    let fromMappers (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> [] =
-        mappers |> Seq.map ( fun (label,mapper) -> fromMapper(label,mapper)) |> Seq.toArray
-
-    let groupMappers label (mappers :  (string * ('t -> CellContent)) seq) : VTableRowInfo<'t> =
-        fromMappers mappers |> group label
 
 type VTableInfo<'t> =  {
      ShowLabelsAsColumn  : bool 
-     RowInfos : VTableRowInfo<'t> [] 
+     RowInfos : ColumnInfo<'t> [] 
      Header   :  RangeProxy<'t>
 }
 
+type TableInfo<'t> =  {
+     ColumnInfos : ColumnInfo<'t> [] 
+     Header   :  RangeProxy<'t>
+}
 
 type TableView<'t> = {
     Header :  RangeProxy<'t>
     Data :  RangeProxy<'t> 
 }
 
+module ColumnInfo = 
+    let contramap f (columnInfo :  ColumnInfo<'t>) ={
+        Content = RangeProxy.contramap f columnInfo.Content
+        Label  =  RangeProxy.contramap f columnInfo.Label
+    }
+    let fromMapper (label : string , mapper : 't -> CellContent) : ColumnInfo<'t>  = 
+        let content = RangeProxy.cell mapper
+        {
+            Content = content
+            Label = RangeProxy.constStr label
+        }
+
+    let group label (columns : ColumnInfo<'t> []) : ColumnInfo<'t> = {
+        Content = RangeProxy.stack Vertical (columns |> Array.map (fun x -> x.Content) )
+        Label   = RangeProxy.stack Horizontal [| RangeProxy.constStr label; RangeProxy.stack Vertical (columns |> Array.map (fun x -> x.Label));|]
+    }
+
+    let fromMappers (mappers :  (string * ('t -> CellContent)) seq) : ColumnInfo<'t> [] =
+        mappers |> Seq.map ( fun (label,mapper) -> fromMapper(label,mapper)) |> Seq.toArray
+
+    let groupMappers label (mappers :  (string * ('t -> CellContent)) seq) : ColumnInfo<'t> =
+        fromMappers mappers |> group label
 
 module TableView = 
 
@@ -60,60 +66,73 @@ module TableView =
         let newData = views |> Seq.map(fun x -> x.Data) |> RangeProxy.stack Horizontal 
         { Header = newHeader; Data = newData }
 
-
-    let fromSingle (view :  TableView<'t>) : RangeProxy<'t> = 
-        RangeProxy.stack Vertical [ view.Header; view.Data ]
-
-    let fromSeq (view :  TableView<'t>) : RangeProxy<'t []> = 
-        RangeProxy.stack Vertical [ RangeProxy.fromFirst view.Header; RangeProxy.fromSeq Vertical view.Data ]
-
-module VTableInfo = 
-
-    let contramap f (vtable :  VTableInfo<'t>) = {
-         ShowLabelsAsColumn = vtable.ShowLabelsAsColumn
-         RowInfos =  Array.map (VTableRowInfo.contramap f) vtable.RowInfos
-         Header = RangeProxy.contramap f vtable.Header
+    
+    let fromSeq (view :  TableView<'t>) : TableView<'t []> =  {
+        Header = RangeProxy.fromFirst view.Header
+        Data = RangeProxy.fromSeq Vertical view.Data
     }
 
-    /// try generalize with fromSeq
-    let fromSingle (vtable: VTableInfo<'t>) : TableView<'t> = 
-       let rowsContent = 
+    let toRangeProxy (view :  TableView<'t>) : RangeProxy<'t> = 
+        RangeProxy.stack Vertical [ view.Header; view.Data ]
+
+
+module TableInfo = 
+     let contramap f (table :  TableInfo<'t>) : TableInfo<'u> = {
+            ColumnInfos =  Array.map (ColumnInfo.contramap f) table.ColumnInfos
+            Header = RangeProxy.contramap f table.Header
+        }
+
+     let toTableView (table : TableInfo<'t>) : TableView<'t []> =
+
+        let boundedColumns = 
+            table.ColumnInfos
+            |> Seq.map (fun x -> RangeProxy.syncWidth [x.Label; x.Content] |> Seq.toArray)
+            |> Seq.cache
+
+        let columnLablesContent : RangeProxy<'t> = 
+            boundedColumns
+            |> Seq.map (Array.item 0)
+            |> RangeProxy.stack Horizontal
+
+        let columnsContent = 
+            boundedColumns
+            |> Seq.map (Array.item 1)
+            |> RangeProxy.stack Horizontal
+        {   
+            Header = (RangeProxy.fromFirst (RangeProxy.stack Vertical [table.Header; columnLablesContent]))
+            Data = (RangeProxy.fromSeq Vertical columnsContent)
+        }
+
+module VTableInfo = 
+    let contramap f (vtable :  VTableInfo<'t>) = {
+         ShowLabelsAsColumn = vtable.ShowLabelsAsColumn
+         RowInfos =  Array.map (ColumnInfo.contramap f) vtable.RowInfos
+         Header = RangeProxy.contramap f vtable.Header
+    }
+      
+    let toTableView (vtable : VTableInfo<'t>) : TableView<'t []> =
+
+        let sync = if vtable.ShowLabelsAsColumn then RangeProxy.syncHeight else RangeProxy.syncWidth
+        let boundedColumns = 
             vtable.RowInfos
-            |> Array.map(fun x -> x.Content)
-            |> RangeProxy.stack Vertical
+            |> Seq.map (fun x -> sync [x.Label; x.Content] |> Seq.toArray)
+            |> Seq.cache
 
-       let rowLablesContent : RangeProxy<'t> = 
-            vtable.RowInfos 
-            |> Array.map(fun x -> x.Label)
-            |> RangeProxy.stack Vertical
 
-       if vtable.ShowLabelsAsColumn
-       then 
-            {   
-                Header = RangeProxy.stack Horizontal [RangeProxy.syncWidth rowLablesContent (CellContent.FromString "Наименование параметра") ; vtable.Header]
-                Data =  RangeProxy.stack Horizontal [rowLablesContent ; rowsContent]
-            }
-       else 
-            {   
-                Header = RangeProxy.stack Vertical [vtable.Header; rowLablesContent]
-                Data = rowsContent
-            }
-
-    let fromSeq (vtable : VTableInfo<'t>) : TableView<'t []> =
         let rowLablesContent : RangeProxy<'t> = 
-            vtable.RowInfos 
-            |> Array.map(fun x -> x.Label)
+            boundedColumns
+            |> Seq.map (Array.item 0)
             |> RangeProxy.stack Vertical
 
         let rowsContent = 
-            vtable.RowInfos
-            |> Array.map(fun x -> x.Content)
+            boundedColumns
+            |> Seq.map (Array.item 1)
             |> RangeProxy.stack Vertical
 
         if vtable.ShowLabelsAsColumn
         then 
             {   
-                Header = (RangeProxy.stack Horizontal [RangeProxy.syncWidth (RangeProxy.fromFirst rowLablesContent) (CellContent.FromString "Наименование параметра") ; RangeProxy.fromSeq Horizontal vtable.Header])
+                Header = (RangeProxy.stack Horizontal [ RangeProxy.constStr "Наименование параметра" ; RangeProxy.fromSeq Horizontal vtable.Header])
                 Data =  (RangeProxy.stack Horizontal [ RangeProxy.fromFirst rowLablesContent ; RangeProxy.fromSeq Horizontal rowsContent])
             }
         else 

@@ -70,13 +70,6 @@ module RangeProxyConveter =
             | Horizontal -> {Width = a.Width + b.Width; Height = Math.Max(a.Height, b.Height)}
             | Vertical -> {Width = Math.Max(a.Width ,b.Width); Height = a.Height + b.Height}
 
-    let private substractSize stackType (a : ContentSize) (b : ContentSize) : ContentSize =
-            match stackType with
-            | Horizontal -> { a with Width = a.Width - b.Width}
-            | Vertical -> {a with Height = a.Height - b.Height}
-
-    
-
     let convert (metadataProvider : IMetaDataProvider<'m>) (proxy  : RangeProxy<'t>) (value : 't) : StackView<'m> = 
         let totalSize = RangeProxy.minimalContentSize proxy value
      
@@ -116,7 +109,7 @@ module RangeProxyConveter =
                             Width = if dynamicWidth then Math.Min(restSize.Width, Math.Max(maxDynamicWidths, contentSize.Width)) else contentSize.Width
                             Height = if dynamicHeight then Math.Min(restSize.Height, Math.Max(maxDynamicHeight, contentSize.Height)) else contentSize.Height
                         }
-                        actualSize, substractSize stackType restSize actualSize ) 
+                        actualSize, RangeProxy.substractSize stackType restSize actualSize ) 
                     |> fst
                     |> Seq.toArray
 
@@ -129,5 +122,3 @@ module RangeProxyConveter =
 
                 StackView (stackType, views)
         convert' value metadataProvider.Default totalSize proxy
-    //
-//    

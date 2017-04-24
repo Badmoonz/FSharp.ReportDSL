@@ -19,13 +19,13 @@ module RegimeComplianceExample =
 
 
 
-    let intComplianceVtable label : VTableRowInfo<Compliance<int>> =
-         VTableRowInfo.groupMappers label [|
+    let intComplianceVtable label : ColumnInfo<Compliance<int>> =
+         ColumnInfo.groupMappers label [|
             (@"Факт",  fun s -> CellContent.FromInt s.Fact)
             (@"План",  fun s -> CellContent.FromInt s.Plan)|]  
 
-    let doubleComplianceVtable label : VTableRowInfo<Compliance<double>> =
-         VTableRowInfo.groupMappers label [|
+    let doubleComplianceVtable label : ColumnInfo<Compliance<double>> =
+         ColumnInfo.groupMappers label [|
             (@"Факт",  fun s -> CellContent.FromDouble s.Fact)
             (@"План",  fun s -> CellContent.FromDouble s.Plan)|]  
 
@@ -33,8 +33,8 @@ module RegimeComplianceExample =
          ShowLabelsAsColumn = true
          RowInfos =
             [|
-               doubleComplianceVtable "т/м3" |> VTableRowInfo.contramap (fun x -> x.Ro)
-               doubleComplianceVtable "сСт" |> VTableRowInfo.contramap (fun x -> x.Nu)
+               doubleComplianceVtable "т/м3" |> ColumnInfo.contramap (fun x -> x.Ro)
+               doubleComplianceVtable "сСт" |> ColumnInfo.contramap (fun x -> x.Nu)
 
             |]
          Header  =  RangeProxy.constStr "параметры нефти"
@@ -44,7 +44,7 @@ module RegimeComplianceExample =
          ShowLabelsAsColumn = true
          RowInfos =
             [|
-               doubleComplianceVtable "расход" |> VTableRowInfo.contramap (fun x -> x.Q)
+               doubleComplianceVtable "расход" |> ColumnInfo.contramap (fun x -> x.Q)
             |]
          Header  =  RangeProxy.cell (fun x -> CellContent.FromString x.Name)
     }
@@ -53,29 +53,29 @@ module RegimeComplianceExample =
          ShowLabelsAsColumn = true
          RowInfos =
             Array.ofSeq <| seq {
-                yield intComplianceVtable "Кол-во аггрегатов" |> VTableRowInfo.contramap (fun x -> x.ActivePumps |> Compliance.map Seq.length)
-                if hasVfd then yield  doubleComplianceVtable "частота" |> VTableRowInfo.contramap (fun x -> x.AvgShaftSpeed)
-                yield doubleComplianceVtable "Рвх" |> VTableRowInfo.contramap (fun x -> x.PIn)
-                yield doubleComplianceVtable "Рвх" |> VTableRowInfo.contramap (fun x -> x.PIn)
-                yield doubleComplianceVtable "Ркол" |> VTableRowInfo.contramap (fun x -> x.PCol)
-                yield doubleComplianceVtable "Рвых" |> VTableRowInfo.contramap (fun x -> x.POut)
+                yield intComplianceVtable "Кол-во аггрегатов" |> ColumnInfo.contramap (fun x -> x.ActivePumps |> Compliance.map Seq.length)
+                if hasVfd then yield  doubleComplianceVtable "частота" |> ColumnInfo.contramap (fun x -> x.AvgShaftSpeed)
+                yield doubleComplianceVtable "Рвх" |> ColumnInfo.contramap (fun x -> x.PIn)
+                yield doubleComplianceVtable "Рвх" |> ColumnInfo.contramap (fun x -> x.PIn)
+                yield doubleComplianceVtable "Ркол" |> ColumnInfo.contramap (fun x -> x.PCol)
+                yield doubleComplianceVtable "Рвых" |> ColumnInfo.contramap (fun x -> x.POut)
             }   
          Header  =  RangeProxy.cell (fun x -> CellContent.FromString x.Name)
     }
 
-    let containsVfd (npsInfos : NpsInfoCompliance seq) = npsInfos |> Seq.filter(fun x -> x.AvgShaftSpeed.Plan.IsSome || x.AvgShaftSpeed.Fact.IsSome) |> Seq.isEmpty |> not
+    let containsVfd (npsInfos : NpsInfoCompliance seq) = Seq.exists (fun x -> x.AvgShaftSpeed.Plan.IsSome || x.AvgShaftSpeed.Fact.IsSome) npsInfos
 
-    let flowInfoView : TableView<RegimeInfoCompliance> = flowInfoComplianceVtable |> VTableInfo.fromSeq |> TableView.contramap (fun info -> info.FlowInfos)
-    let npsInfoView  : TableView<RegimeInfoCompliance> = npsInfoComplianceVtable >> VTableInfo.fromSeq |> TableView.liftDependency |> TableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
-    let oilInfoView  : TableView<RegimeInfoCompliance> = oilInfoComplianceVtable  |> VTableInfo.fromSingle |> TableView.contramap (fun info -> info.OilInfo)
+    let flowInfoView : TableView<RegimeInfoCompliance> = flowInfoComplianceVtable |> VTableInfo.toTableView |> TableView.contramap (fun info -> info.FlowInfos)
+    let npsInfoView  : TableView<RegimeInfoCompliance> = npsInfoComplianceVtable >> VTableInfo.toTableView |> TableView.liftDependency |> TableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
+    let oilInfoView  : TableView<RegimeInfoCompliance> = oilInfoComplianceVtable  |> VTableInfo.toTableView |> TableView.contramap (fun info -> [| info.OilInfo |])
 
-    let singleRegimeInfoGrid = TableView.combine [| oilInfoView; flowInfoView ; npsInfoView  |] |> TableView.fromSingle
+    let singleRegimeInfoGrid = TableView.combine [| oilInfoView; flowInfoView ; npsInfoView  |] |> TableView.toRangeProxy
     let regimeComplianceTemplate = 
         RangeProxy.stack Vertical [|
             RangeProxy.cell (fun x -> CellContent.FromString (sprintf " Аппробаия режима %s на `%A` -`%A`" x.RegimeName (fst x.Period) (snd x.Period) ))
             RangeProxy.empty
             RangeProxy.empty
-            TableView.combine [| oilInfoView; flowInfoView  ; npsInfoView |] |> TableView.fromSingle
+            TableView.combine [| oilInfoView; flowInfoView  ; npsInfoView |] |> TableView.toRangeProxy
 
         |]
 

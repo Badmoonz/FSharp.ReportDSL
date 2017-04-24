@@ -11,7 +11,7 @@ module RegimExampleVtable =
    
     let flowInfoVTable : VTableInfo<FlowInfo> = {
          ShowLabelsAsColumn = false
-         RowInfos = VTableRowInfo.fromMappers 
+         RowInfos = ColumnInfo.fromMappers 
             [|
                 ("т / день", fun s -> CellContent.FromDouble s.PerDay)
                 ("тыс т. / мес.", fun s -> CellContent.FromDouble s.PerMonth)
@@ -23,12 +23,12 @@ module RegimExampleVtable =
          ShowLabelsAsColumn = true
          RowInfos = 
             Seq.toArray <| seq {
-                yield! VTableRowInfo.fromMappers  [|
+                yield! ColumnInfo.fromMappers  [|
                     (@"Кол-во агрегатов", fun s ->  CellContent.FromInt (Some s.ActivePumps.Length))
                     (@"Агрегаты",   fun s -> CellContent.FromString (s.ActivePumps |> Seq.map(fun x -> x.Name) |> String.concat ";")) |] 
                 if containsVfd then
-                    yield VTableRowInfo.fromMapper(@"Частота" , fun s -> CellContent.FromDouble s.PIn)
-                yield VTableRowInfo.groupMappers "P" [|
+                    yield ColumnInfo.fromMapper(@"Частота" , fun s -> CellContent.FromDouble s.PIn)
+                yield ColumnInfo.groupMappers "P" [|
                     (@"Pвх",  fun s -> CellContent.FromDouble s.PIn)
                     (@"Pкол",  fun s -> CellContent.FromDouble s.PCol)
                     (@"Pвых",  fun s -> CellContent.FromDouble s.POut)
@@ -39,7 +39,7 @@ module RegimExampleVtable =
 
     let oilInfoVTable : VTableInfo<OilInfo> = {
          ShowLabelsAsColumn = false
-         RowInfos = VTableRowInfo.fromMappers 
+         RowInfos = ColumnInfo.fromMappers 
             [|
                 (@"т./ м3", fun s -> CellContent.FromDouble s.Ro)
                 (@"сСТ", fun s -> CellContent.FromDouble s.Nu)
@@ -55,17 +55,17 @@ module RegimExampleVtable =
 
     let containsVfd (npsInfos : NpsInfo seq) = npsInfos |> Seq.filter(fun x -> x.AvgShaftSpeed.IsSome) |> Seq.isEmpty |> not
 
-    let flowInfoView : TableView<RegimeInfo> = flowInfoVTable |> VTableInfo.fromSeq |> TableView.contramap (fun info -> info.FlowInfos)
-    let npsInfoView  : TableView<RegimeInfo> = npsInfoVTable >> VTableInfo.fromSeq |> TableView.liftDependency |> TableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
-    let oilInfoView  : TableView<RegimeInfo> = oilInfoVTable  |> VTableInfo.fromSingle |> TableView.contramap (fun info -> info.OilInfo)
+    let flowInfoView : TableView<RegimeInfo> = flowInfoVTable |> VTableInfo.toTableView |> TableView.contramap (fun info -> info.FlowInfos)
+    let npsInfoView  : TableView<RegimeInfo> = npsInfoVTable >> VTableInfo.toTableView |> TableView.liftDependency |> TableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
+    let oilInfoView  : TableView<RegimeInfo> = oilInfoVTable  |> VTableInfo.toTableView |> TableView.contramap (fun info ->  [| info.OilInfo |])
 
-    let singleRegimeInfoGrid = TableView.combine [| regimeNameTableView; oilInfoView; flowInfoView ; npsInfoView  |] |> TableView.fromSingle
+    let singleRegimeInfoGrid = TableView.combine [| regimeNameTableView; oilInfoView; flowInfoView ; npsInfoView  |] |> TableView.toRangeProxy
     let manyRegimesInfoGrid = 
         RangeProxy.stack Vertical [|
             RangeProxy.constCell (CellContent.FromString "AZZZXZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
             RangeProxy.empty
             RangeProxy.empty
-            TableView.combine [| regimeNameTableView;  oilInfoView; flowInfoView  ; npsInfoView |] |> TableView.fromSeq
+            TableView.combine [| regimeNameTableView;  oilInfoView; flowInfoView  ; npsInfoView |] |> TableView.fromSeq |> TableView.toRangeProxy
 
         |]
 
