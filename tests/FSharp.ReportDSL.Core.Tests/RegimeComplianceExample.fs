@@ -65,17 +65,17 @@ module RegimeComplianceExample =
 
     let containsVfd (npsInfos : NpsInfoCompliance seq) = npsInfos |> Seq.filter(fun x -> x.AvgShaftSpeed.Plan.IsSome || x.AvgShaftSpeed.Fact.IsSome) |> Seq.isEmpty |> not
 
-    let flowInfoView : VTableView<RegimeInfoCompliance> = flowInfoComplianceVtable |> VTableInfo.fromSeq |> VTableView.contramap (fun info -> info.FlowInfos)
-    let npsInfoView  : VTableView<RegimeInfoCompliance> = npsInfoComplianceVtable >> VTableInfo.fromSeq |> VTableView.liftDependency |> VTableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
-    let oilInfoView  : VTableView<RegimeInfoCompliance> = oilInfoComplianceVtable  |> VTableInfo.fromSingle |> VTableView.contramap (fun info -> info.OilInfo)
+    let flowInfoView : TableView<RegimeInfoCompliance> = flowInfoComplianceVtable |> VTableInfo.fromSeq |> TableView.contramap (fun info -> info.FlowInfos)
+    let npsInfoView  : TableView<RegimeInfoCompliance> = npsInfoComplianceVtable >> VTableInfo.fromSeq |> TableView.liftDependency |> TableView.contramap (fun info -> containsVfd info.NpsInfos, info.NpsInfos)
+    let oilInfoView  : TableView<RegimeInfoCompliance> = oilInfoComplianceVtable  |> VTableInfo.fromSingle |> TableView.contramap (fun info -> info.OilInfo)
 
-    let singleRegimeInfoGrid = VTableView.combine [| oilInfoView; flowInfoView ; npsInfoView  |] |> VTableView.fromSingle
+    let singleRegimeInfoGrid = TableView.combine [| oilInfoView; flowInfoView ; npsInfoView  |] |> TableView.fromSingle
     let regimeComplianceTemplate = 
         RangeProxy.stack Vertical [|
             RangeProxy.cell (fun x -> CellContent.FromString (sprintf " Аппробаия режима %s на `%A` -`%A`" x.RegimeName (fst x.Period) (snd x.Period) ))
             RangeProxy.empty
             RangeProxy.empty
-            VTableView.combine [| oilInfoView; flowInfoView  ; npsInfoView |] |> VTableView.fromSingle
+            TableView.combine [| oilInfoView; flowInfoView  ; npsInfoView |] |> TableView.fromSingle
 
         |]
 

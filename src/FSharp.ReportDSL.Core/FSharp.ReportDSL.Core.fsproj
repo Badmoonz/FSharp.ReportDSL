@@ -56,7 +56,6 @@
     <Compile Include="StringCellConverter.fs" />
     <Compile Include="HtmlConverter.fs" />
     <Compile Include="ExcelConverter.fs" />
-    <None Include="RegimeExample.fsx" />
     <None Include="Htmltest.fsx" />
     <None Include="paket.references" />
   </ItemGroup>

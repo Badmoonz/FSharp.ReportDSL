@@ -61,7 +61,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Import Project="..\..\.paket\paket.targets" />
+
   <ItemGroup>
     <None Include="paket.references" />
     <Content Include="App.config" />

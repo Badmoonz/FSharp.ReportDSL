@@ -16,6 +16,7 @@ type StringCell =
                 let ss1' = Array.ofSeq <|  seq{ yield! ss1; yield! Array.create (maxLen - ss1.Length) (new String(' ', ss1.[0].Length))}
                 let ss2' = Array.ofSeq <|  seq{ yield! ss2; yield! Array.create (maxLen - ss2.Length) (new String(' ', ss2.[0].Length))}
                 StringCell.hjoin (StringCell ss1') (StringCell ss2')
+               // raise (Exception(sprintf "StringCell.hjoin failed %d <> %d" ss1.Length ss2.Length))
             else Array.map2 (fun s1 s2 ->  s1 + "|" + s2 ) ss1 ss2 |> StringCell
         | EmptyCell , _ -> sc2
         | _ , EmptyCell -> sc1

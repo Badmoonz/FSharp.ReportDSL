@@ -36,34 +36,35 @@ type VTableInfo<'t> =  {
      Header   :  RangeProxy<'t>
 }
 
-type VTableView<'t> = {
+
+type TableView<'t> = {
     Header :  RangeProxy<'t>
     Data :  RangeProxy<'t> 
 }
 
 
-module VTableView = 
+module TableView = 
 
-    let liftDependency (f : 'a -> VTableView<'t>) : VTableView<'a * 't> = {
+    let liftDependency (f : 'a -> TableView<'t>) : TableView<'a * 't> = {
         Header = RangeProxy.liftDependency (fun a -> (f a).Header)
         Data = RangeProxy.liftDependency (fun a -> (f a).Data)
     }
         
-    let contramap f (view :  VTableView<'t>) = {
+    let contramap f (view :  TableView<'t>) = {
          Header = RangeProxy.contramap f view.Header
          Data =  RangeProxy.contramap f view.Data
     }
 
-    let combine (views :  VTableView<'t> []) : VTableView<'t> = 
+    let combine (views :  TableView<'t> []) : TableView<'t> = 
         let newHeader = views |> Seq.map(fun x -> x.Header) |> RangeProxy.stack Horizontal 
         let newData = views |> Seq.map(fun x -> x.Data) |> RangeProxy.stack Horizontal 
         { Header = newHeader; Data = newData }
 
 
-    let fromSingle (view :  VTableView<'t>) : RangeProxy<'t> = 
+    let fromSingle (view :  TableView<'t>) : RangeProxy<'t> = 
         RangeProxy.stack Vertical [ view.Header; view.Data ]
 
-    let fromSeq (view :  VTableView<'t>) : RangeProxy<'t []> = 
+    let fromSeq (view :  TableView<'t>) : RangeProxy<'t []> = 
         RangeProxy.stack Vertical [ RangeProxy.fromFirst view.Header; RangeProxy.fromSeq Vertical view.Data ]
 
 module VTableInfo = 
@@ -75,7 +76,7 @@ module VTableInfo =
     }
 
     /// try generalize with fromSeq
-    let fromSingle (vtable: VTableInfo<'t>) : VTableView<'t> = 
+    let fromSingle (vtable: VTableInfo<'t>) : TableView<'t> = 
        let rowsContent = 
             vtable.RowInfos
             |> Array.map(fun x -> x.Content)
@@ -98,7 +99,7 @@ module VTableInfo =
                 Data = rowsContent
             }
 
-    let fromSeq (vtable : VTableInfo<'t>) : VTableView<'t []> =
+    let fromSeq (vtable : VTableInfo<'t>) : TableView<'t []> =
         let rowLablesContent : RangeProxy<'t> = 
             vtable.RowInfos 
             |> Array.map(fun x -> x.Label)
