@@ -6,13 +6,13 @@ open FSharp.ReportDSL.Core
 
 type VTableRowInfo<'t> =  {
     Content  : RangeProxy<'t>
-    Label    : RangeProxy<unit> 
+    Label    : RangeProxy<'t> 
 }
 
 module VTableRowInfo = 
     let contramap f (rowInfo :  VTableRowInfo<'t>) ={
         Content = RangeProxy.contramap f rowInfo.Content
-        Label  = rowInfo.Label
+        Label  =  RangeProxy.contramap f rowInfo.Label
     }
     let fromMapper (label : string , mapper : 't -> CellContent) : VTableRowInfo<'t>  = {
         Content = RangeProxy.cell mapper
@@ -83,7 +83,7 @@ module VTableInfo =
 
        let rowLablesContent : RangeProxy<'t> = 
             vtable.RowInfos 
-            |> Array.map(fun x -> RangeProxy.contramap (const' ()) x.Label)
+            |> Array.map(fun x -> x.Label)
             |> RangeProxy.stack Vertical
 
        if vtable.ShowLabelsAsColumn
@@ -101,7 +101,7 @@ module VTableInfo =
     let fromSeq (vtable : VTableInfo<'t>) : VTableView<'t []> =
         let rowLablesContent : RangeProxy<'t> = 
             vtable.RowInfos 
-            |> Array.map(fun x -> RangeProxy.contramap (const' ()) x.Label)
+            |> Array.map(fun x -> x.Label)
             |> RangeProxy.stack Vertical
 
         let rowsContent = 
