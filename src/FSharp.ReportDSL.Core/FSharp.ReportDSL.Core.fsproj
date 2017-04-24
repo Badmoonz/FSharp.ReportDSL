@@ -62,7 +62,6 @@
     <Compile Include="RegimeComplianceExample.fs" />
     <None Include="RegimeExample.fsx" />
     <None Include="Htmltest.fsx" />
-    <None Include="test.html" />
     <None Include="paket.references" />
   </ItemGroup>
   <PropertyGroup>

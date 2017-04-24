@@ -4,8 +4,8 @@ open System
 open FSharp.ReportDSL
 
 type ContentSizeType = 
-    | Dynamic
-    | Static of int
+    | Dynamic of int  // min dynamic size
+    | Static of int 
 
 
 type NumericFormat = string
@@ -23,8 +23,8 @@ type CellContent =
 type ContentProxySize = 
     { Width : ContentSizeType; Height : ContentSizeType }
     static member Zero = { Width = Static 0; Height =  Static 0}
-    static member DefaultStatic =  { Width = Static 1; Height = Static 3 }
-    static member DefaultDyanmic = { Width = Dynamic; Height =  Dynamic}
+    static member DefaultStatic =  { Width = Static 1; Height = Static 1 }
+    static member DefaultDyanmic = { Width = Dynamic 1; Height =  Dynamic 1}
 
 
 type ContentSize = 
@@ -54,11 +54,11 @@ type CellProxy<'t> = {
 module CellProxy =
     open Helpers
     let minimalSize = function
-        | Dynamic -> 1
+        | Dynamic min -> min
         | Static x -> x   
 
     let isDynamic = function
-        | Dynamic -> true
+        | Dynamic _ -> true
         | Static x -> false 
   
     let minimalSizeFromProxy ({Width = width; Height = height} : ContentProxySize ) = { Width = minimalSize width; Height = minimalSize height}
@@ -123,7 +123,7 @@ module RangeProxy =
     let internal syncWidth (from : RangeProxy<'t>) (content : CellContent) =
          Cell <| { 
             ContentMapper = const' content
-            CellSize = fun x -> { Width = Static (minimalContentSize from x).Width; Height = Dynamic }
+            CellSize = fun x -> { Width = Dynamic (minimalContentSize from x).Width; Height = Dynamic 1 }
         }
 
     let stack<'t> stackType (ranges : RangeProxy<'t> seq) = 
